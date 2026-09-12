@@ -427,3 +427,15 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ---------------------------------------------------------------------------
+# Node / Vite / Electron (Cube Improver app)
+# ---------------------------------------------------------------------------
+dist/
+dist-electron/
+dist-release/
+dev-dist/
+.vite/
+coverage/
+*.local
+.DS_Store

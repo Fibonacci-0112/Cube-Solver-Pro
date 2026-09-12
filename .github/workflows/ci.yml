@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  # Branch pushes are covered by the pull_request event; listing them here too
+  # would run the whole workflow twice for every push to a PR branch.
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes whatever was already running for the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Tests, types and web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npm test
+      - name: Build the web app
+        run: npm run build
+
+      - name: Build the desktop shell
+        run: npm run build:electron
+
+      # Launches the real Electron shell and checks the things the custom
+      # app:// scheme exists to make work — a secure origin, a usable local
+      # database, and a scramble actually being generated.
+      - name: Smoke-test the desktop shell
+        run: xvfb-run -a npx electron --no-sandbox scripts/smoke-electron.cjs
+        timeout-minutes: 5
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: dist
+          retention-days: 14
+
+  windows:
+    name: Windows packages
+    needs: check
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm run build:electron
+
+      - name: Build the installer
+        run: npx electron-builder --win nsis --publish never
+
+      # Only worth building once the Partner Center identity is configured:
+      # a package whose identity does not match the listing cannot be uploaded.
+      # Set these as repository variables (Settings → Secrets and variables →
+      # Actions → Variables) to switch this step on.
+      - name: Build the Microsoft Store package
+        if: ${{ vars.APPX_IDENTITY_NAME != '' }}
+        run: >
+          npx electron-builder --win appx --publish never
+          -c.appx.identityName="${{ vars.APPX_IDENTITY_NAME }}"
+          -c.appx.publisher="${{ vars.APPX_PUBLISHER }}"
+          -c.appx.publisherDisplayName="${{ vars.APPX_PUBLISHER_DISPLAY_NAME }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: |
+            dist-release/*.exe
+            dist-release/*.appx
+            dist-release/*.msix
+          if-no-files-found: error
+          retention-days: 14

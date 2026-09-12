@@ -41,9 +41,6 @@ export const EDGE_FACES: readonly (readonly [Face, Face])[] = [
   ['B', 'R'], // BR
 ];
 
-export const CORNER_NAMES = CORNER_FACES.map((f) => f.join(''));
-export const EDGE_NAMES = EDGE_FACES.map((f) => f.join(''));
-
 const NORMALS: Record<Face, readonly [number, number, number]> = {
   U: [0, 1, 0],
   R: [1, 0, 0],
@@ -97,13 +94,6 @@ export function solvedCubie(): CubieCube {
     eo: new Int8Array(12),
   };
 }
-
-export const cloneCubie = (c: CubieCube): CubieCube => ({
-  cp: c.cp.slice(),
-  co: c.co.slice(),
-  ep: c.ep.slice(),
-  eo: c.eo.slice(),
-});
 
 /** Applies `b` to `a`: the piece landing in slot i is whatever `a` had in slot b[i]. */
 export function multiply(a: CubieCube, b: CubieCube): CubieCube {
@@ -214,9 +204,6 @@ export const MOVE_NAMES: readonly string[] = (() => {
   }
   return names;
 })();
-
-export const applyMoveIndex = (cube: CubieCube, move: number): CubieCube =>
-  multiply(cube, MOVE_CUBES[move]);
 
 export function isSolvedCubie(cube: CubieCube): boolean {
   for (let i = 0; i < 8; i++) if (cube.cp[i] !== i || cube.co[i] !== 0) return false;

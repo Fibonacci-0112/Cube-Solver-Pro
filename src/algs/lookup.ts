@@ -9,7 +9,6 @@
 
 import { ALG_SETS_BY_ID } from './index';
 import { caseStateOf } from './analysis';
-import { algFor } from './drill';
 import type { AlgCase, AlgSet } from './types';
 import type { CubieCube } from '../cube/cubie';
 
@@ -35,9 +34,3 @@ export const identifyOll = (cube: CubieCube): AlgCase | undefined =>
 
 export const identifyPll = (cube: CubieCube): AlgCase | undefined =>
   identifyCase(ALG_SETS_BY_ID.pll, cube);
-
-export const identifyF2l = (cube: CubieCube): AlgCase | undefined =>
-  identifyCase(ALG_SETS_BY_ID.f2l, cube);
-
-/** The algorithm to show for a case, honouring a learner's own choice. */
-export const algorithmFor = algFor;

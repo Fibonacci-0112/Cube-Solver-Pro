@@ -20,8 +20,6 @@ export type Face = (typeof FACE_NAMES)[number];
 
 export const FACE_INDEX: Record<Face, number> = { U: 0, R: 1, F: 2, D: 3, L: 4, B: 5 };
 
-export const OPPOSITE: Record<Face, Face> = { U: 'D', D: 'U', R: 'L', L: 'R', F: 'B', B: 'F' };
-
 /** Axis each face turns about; used to spot redundant moves in scrambles. */
 export const AXIS: Record<Face, number> = { U: 0, D: 0, R: 1, L: 1, F: 2, B: 2 };
 

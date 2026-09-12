@@ -250,8 +250,6 @@ export function prepareSolverSync(): void {
   tables = built as Tables;
 }
 
-export const isSolverReady = (): boolean => tables !== null;
-
 export interface SolveOptions {
   /** Stop as soon as a solution this short is found. */
   targetLength?: number;

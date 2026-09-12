@@ -116,11 +116,6 @@ export function prepare222(): void {
   tables = { perm, orient, distance };
 }
 
-export const is222Ready = (): boolean => tables !== null;
-
-export const stateIndex222 = (cube: CubieCube): number =>
-  getPerm222(cube) * N_ORIENT + getOrient222(cube);
-
 /**
  * Shortest solution for a 2x2 state, as move indices. Walks downhill through
  * the distance table, so it cannot fail for a reachable state.

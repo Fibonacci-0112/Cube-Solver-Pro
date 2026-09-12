@@ -9,7 +9,7 @@
 import { F2L } from './f2l';
 import { OLL } from './oll';
 import { PLL } from './pll';
-import type { AlgCase, AlgSet } from './types';
+import type { AlgSet } from './types';
 
 export type { AlgCase, AlgSet } from './types';
 
@@ -19,10 +19,3 @@ export const ALG_SETS: readonly AlgSet[] = [F2L, OLL, PLL];
 export const ALG_SETS_BY_ID: Record<string, AlgSet> = Object.fromEntries(
   ALG_SETS.map((set) => [set.id, set]),
 );
-
-export const findCase = (setId: string, caseId: string): AlgCase | undefined =>
-  ALG_SETS_BY_ID[setId]?.cases.find((c) => c.id === caseId);
-
-/** Every case across every set, tagged with the set it came from. */
-export const allCases = (): { set: AlgSet; algCase: AlgCase }[] =>
-  ALG_SETS.flatMap((set) => set.cases.map((algCase) => ({ set, algCase })));

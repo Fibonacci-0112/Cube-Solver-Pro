@@ -10,6 +10,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registration is done by hand in main.tsx so the desktop build can skip
+      // it: there it would cache local files over a local protocol for no gain,
+      // and a stale cache could outlive an app update.
+      injectRegister: null,
       includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],

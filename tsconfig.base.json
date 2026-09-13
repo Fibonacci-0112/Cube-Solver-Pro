@@ -13,11 +13,14 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
+    // Relative, and deliberately without `baseUrl`: these resolve against this
+    // file, so they keep pointing at the right sources from any package that
+    // extends it. TypeScript 7 removed `baseUrl`, and non-relative targets went
+    // with it.
     "paths": {
-      "@cube/core": ["packages/core/src/index.ts"],
-      "@cube/platform": ["packages/platform/src/index.ts"],
-      "@cube/ui": ["packages/ui/src/index.tsx"]
+      "@cube/core": ["./packages/core/src/index.ts"],
+      "@cube/platform": ["./packages/platform/src/index.ts"],
+      "@cube/ui": ["./packages/ui/src/index.tsx"]
     }
   }
 }

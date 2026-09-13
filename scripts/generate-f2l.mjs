@@ -7,10 +7,10 @@
  * intact. Reversing that path gives the algorithm that solves the case, so the
  * results are correct by construction and as short as R/U/F allows.
  *
- * Run with: npx vite-node scripts/generate-f2l.mjs > src/algs/f2l.ts
+ * Run with: npx vite-node scripts/generate-f2l.mjs > packages/core/src/algs/f2l.ts
  */
 import { MOVE_CUBES, MOVE_NAMES, multiply, solvedCubie } from '../src/cube/cubie.ts';
-import { f2lKey, f2lRemainderSolved, SOLVED_F2L_KEY, enumerateF2lKeys } from '../src/algs/analysis.ts';
+import { f2lKey, f2lRemainderSolved, SOLVED_F2L_KEY, enumerateF2lKeys } from '../packages/core/src/algs/analysis.ts';
 
 const MOVES = [3, 4, 5, 0, 1, 2, 6, 7, 8]; // R R2 R' U U2 U' F F2 F'
 const faceOf = (m) => Math.floor(m / 3);
@@ -101,7 +101,7 @@ process.stdout.write(`/**
  * gives the solution, so every entry is correct by construction and as short as
  * R/U/F allows. Regenerate with:
  *
- *     npx vite-node scripts/generate-f2l.mjs > src/algs/f2l.ts
+ *     npx vite-node scripts/generate-f2l.mjs > packages/core/src/algs/f2l.ts
  *
  * Many cubers prefer a slightly longer but smoother turning sequence for some of
  * these; the trainer lets you record your own algorithm per case.

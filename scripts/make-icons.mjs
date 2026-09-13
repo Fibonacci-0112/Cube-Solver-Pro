@@ -10,11 +10,11 @@ import { chromium } from 'playwright';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const svg = await readFile('build/icon.svg', 'utf8');
+const svg = await readFile('assets/icon.svg', 'utf8');
 const targets = [
   { file: 'public/icons/icon-192.png', size: 192 },
   { file: 'public/icons/icon-512.png', size: 512 },
-  { file: 'build/icon.png', size: 512 },
+  { file: 'apps/windows/build/icon.png', size: 512 },
 ];
 
 const browser = await chromium.launch();

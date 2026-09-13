@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // No DOM. This is the whole point of the package boundary: core holds the
+    // cube model, the solver, the statistics and the diagram geometry, and it
+    // has to run unchanged in a browser, a WebView, an Electron renderer and a
+    // bare Node test process. Leaving DOM out means a stray `document` or
+    // `localStorage` is a compile error here rather than a crash on one
+    // platform months later.
+    "lib": ["ES2022"],
+    "types": ["vitest/globals"]
+  },
+  "include": ["src"]
+}

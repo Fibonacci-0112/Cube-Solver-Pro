@@ -82,13 +82,18 @@ jobs:
       # a package whose identity does not match the listing cannot be uploaded.
       # Set these as repository variables (Settings → Secrets and variables →
       # Actions → Variables) to switch this step on.
+      # Written to a config file rather than passed as -c.appx.x=y flags:
+      # PowerShell's quoting when it invokes the npx.cmd shim mangles a flag
+      # value containing a space, which PUBLISHER_DISPLAY_NAME normally has.
       - name: Build the Microsoft Store package
         if: ${{ vars.APPX_IDENTITY_NAME != '' }}
-        run: >
-          npx electron-builder --win appx --publish never
-          -c.appx.identityName="${{ vars.APPX_IDENTITY_NAME }}"
-          -c.appx.publisher="${{ vars.APPX_PUBLISHER }}"
-          -c.appx.publisherDisplayName="${{ vars.APPX_PUBLISHER_DISPLAY_NAME }}"
+        env:
+          APPX_IDENTITY_NAME: ${{ vars.APPX_IDENTITY_NAME }}
+          APPX_PUBLISHER: ${{ vars.APPX_PUBLISHER }}
+          APPX_PUBLISHER_DISPLAY_NAME: ${{ vars.APPX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          node scripts/write-appx-config.mjs
+          npx electron-builder --win appx --publish never -c appx.config.json
         working-directory: apps/windows
 
       - uses: actions/upload-artifact@v4

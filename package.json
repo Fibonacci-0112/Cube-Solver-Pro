@@ -1,6 +1,6 @@
 {
-  "name": "cube-improver",
-  "productName": "Cube Improver",
+  "name": "cube-solver-pro",
+  "productName": "Cube Solver Pro",
   "version": "0.1.0",
   "description": "Timer, scramble generator and algorithm trainer for speedcubing. Runs on Android, Windows and the web.",
   "private": true,

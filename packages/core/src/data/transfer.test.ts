@@ -21,7 +21,7 @@ describe('export and re-import', () => {
       trainerStats: [],
     });
     const back = parseImport(JSON.stringify(file));
-    expect(back.source).toBe('cube-improver');
+    expect(back.source).toBe('cube-solver-pro');
     expect(back.sessions).toHaveLength(1);
     expect(back.solves[0].timeMs).toBe(12_340);
   });
@@ -38,7 +38,7 @@ describe('export and re-import', () => {
 
   it('rejects files it does not recognise', () => {
     expect(() => parseImport('not json')).toThrow(/valid JSON/);
-    expect(() => parseImport('{"hello":"world"}')).toThrow(/not a Cube Improver or csTimer/);
+    expect(() => parseImport('{"hello":"world"}')).toThrow(/not a Cube Solver Pro or csTimer/);
     expect(() => parseImport('null')).toThrow(/does not contain any data/);
   });
 
@@ -92,4 +92,3 @@ describe('csTimer import', () => {
     expect(parseImport(csTimer).solves[0].createdAt).toBe(1_600_000_000_000);
   });
 });
-

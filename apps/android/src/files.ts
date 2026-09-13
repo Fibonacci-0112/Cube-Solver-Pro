@@ -30,7 +30,7 @@ export function createAndroidFileTransfer(): FileTransfer {
 
       try {
         await Share.share({
-          title: 'Cube Improver backup',
+          title: 'Cube Solver Pro backup',
           url: uri,
           dialogTitle: 'Save or send your solve history',
         });

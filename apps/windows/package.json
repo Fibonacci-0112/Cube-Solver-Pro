@@ -2,7 +2,7 @@
   "name": "@cube/windows",
   "version": "0.1.0",
   "private": true,
-  "description": "Cube Improver for Windows.",
+  "description": "Cube Solver Pro for Windows.",
   "main": "dist-electron/main.cjs",
   "scripts": {
     "build": "vite build",

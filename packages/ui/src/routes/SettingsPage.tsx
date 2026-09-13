@@ -17,7 +17,7 @@ export function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   const onExport = async () => {
-    const name = `cube-improver-${new Date().toISOString().slice(0, 10)}.json`;
+    const name = `cube-solver-pro-${new Date().toISOString().slice(0, 10)}.json`;
     const outcome = await platform().files.save(name, await exportData());
     if (outcome === 'cancelled') return;
     setMessage(

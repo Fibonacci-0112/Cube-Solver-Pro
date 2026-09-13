@@ -5,8 +5,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * application rather than two that happen to share a name.
  */
 const config: CapacitorConfig = {
-  appId: 'com.fibonacci0112.cubeimprover',
-  appName: 'Cube Improver',
+  appId: 'com.fibonacci0112.cubesolverpro',
+  appName: 'Cube Solver Pro',
   webDir: 'dist',
   android: {
     backgroundColor: '#0f1117',

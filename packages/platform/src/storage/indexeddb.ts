@@ -13,7 +13,7 @@ import type { Session, Settings, Solve, TrainerStat } from '@cube/core';
 import type { Store } from '../types';
 import { createMemoryStore } from './memory';
 
-const DB_NAME = 'cube-improver';
+const DB_NAME = 'cube-solver-pro';
 const DB_VERSION = 1;
 const SETTINGS_KEY = 'settings';
 

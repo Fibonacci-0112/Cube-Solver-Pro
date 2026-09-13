@@ -50,7 +50,7 @@ export default function App() {
       <div className="app">
         <nav className="nav">
           <div className="nav-brand">
-            <span aria-hidden="true">🧊</span> Cube Improver
+            <span aria-hidden="true">🧊</span> Cube Solver Pro
           </div>
           {LINKS.map((link) => (
             <NavLink key={link.to} to={link.to} className="nav-link">

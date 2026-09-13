@@ -8,7 +8,7 @@ import { useApp } from '../state/app';
 
 const STEPS = [
   {
-    title: 'Welcome to Cube Improver',
+    title: 'Welcome to Cube Solver Pro',
     body: (
       <>
         <p>

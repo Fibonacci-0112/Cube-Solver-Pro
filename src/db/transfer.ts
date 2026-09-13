@@ -11,7 +11,7 @@ import { PUZZLE_IDS, type PuzzleId } from '../cube/scramble';
 import type { Penalty, Session, Solve } from '../stats/solves';
 import type { Settings, TrainerStat } from './types';
 
-export const EXPORT_FORMAT = 'cube-improver-export';
+export const EXPORT_FORMAT = 'cube-solver-pro-export';
 export const EXPORT_VERSION = 1;
 
 export interface ExportFile {
@@ -30,7 +30,7 @@ export interface ImportResult {
   trainerStats: TrainerStat[];
   settings?: Partial<Settings>;
   /** What the file was recognised as, for reporting back to the user. */
-  source: 'cube-improver' | 'cstimer';
+  source: 'cube-solver-pro' | 'cstimer';
 }
 
 export function buildExport(data: {
@@ -143,7 +143,7 @@ function parseNative(raw: Record<string, unknown>): ImportResult | null {
     ),
     trainerStats: trainerStats.filter((s) => s && typeof s.id === 'string'),
     settings: (raw.settings as Partial<Settings>) ?? undefined,
-    source: 'cube-improver',
+    source: 'cube-solver-pro',
   };
 }
 
@@ -163,5 +163,5 @@ export function parseImport(text: string): ImportResult {
   const csTimer = parseCsTimer(record);
   if (csTimer) return csTimer;
 
-  throw new Error('That file is not a Cube Improver or csTimer export.');
+  throw new Error('That file is not a Cube Solver Pro or csTimer export.');
 }

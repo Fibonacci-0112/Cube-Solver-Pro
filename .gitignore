@@ -429,7 +429,7 @@ FodyWeavers.xsd
 *.msp
 
 # ---------------------------------------------------------------------------
-# Node / Vite / Electron (Cube Improver app)
+# Node / Vite / Electron (Cube Solver Pro app)
 # ---------------------------------------------------------------------------
 dist/
 dist-electron/

@@ -11,7 +11,7 @@ import { DEFAULT_SETTINGS, type Settings, type TrainerStat } from './types';
 import type { Session, Solve } from '../stats/solves';
 import { buildExport, newId, type ExportFile, type ImportResult } from './transfer';
 
-const DB_NAME = 'cube-improver';
+const DB_NAME = 'cube-solver-pro';
 const DB_VERSION = 1;
 const SETTINGS_KEY = 'settings';
 

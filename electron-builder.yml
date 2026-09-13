@@ -8,8 +8,8 @@
 # reserved in Partner Center, so the three values under `appx` below must be
 # replaced with your own before submitting. Everything else works as-is.
 
-appId: com.fibonacci0112.cubeimprover
-productName: Cube Improver
+appId: com.fibonacci0112.cubesolverpro
+productName: Cube Solver Pro
 
 directories:
   output: dist-release
@@ -41,12 +41,12 @@ appx:
   # `identityName` is "Package/Identity/Name", `publisher` is
   # "Package/Identity/Publisher", and `publisherDisplayName` is
   # "Package/Properties/PublisherDisplayName".
-  identityName: 00000Publisher.CubeImprover
+  identityName: 00000Publisher.CubeSolverPro
   publisher: CN=00000000-0000-0000-0000-000000000000
   publisherDisplayName: Publisher display name
   # ---------------------------------------------------------------------------
-  applicationId: CubeImprover
-  displayName: Cube Improver
+  applicationId: CubeSolverPro
+  displayName: Cube Solver Pro
   backgroundColor: '#1a1a19'
   languages:
     - en-GB

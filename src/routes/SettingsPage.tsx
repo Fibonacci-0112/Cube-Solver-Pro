@@ -23,7 +23,7 @@ export function SettingsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `cube-improver-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `cube-solver-pro-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
     setMessage('Exported. Keep that file somewhere safe — it is your only backup.');

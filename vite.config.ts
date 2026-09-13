@@ -21,8 +21,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
       manifest: {
-        name: 'Cube Improver',
-        short_name: 'Cube Improver',
+        name: 'Cube Solver Pro',
+        short_name: 'Cube Solver Pro',
         description: 'Speedcubing timer, scramble generator and algorithm trainer.',
         theme_color: '#0f1117',
         background_color: '#0f1117',

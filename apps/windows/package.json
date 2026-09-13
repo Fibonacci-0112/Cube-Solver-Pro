@@ -12,11 +12,9 @@
     "dist:store": "npm run build && npm run build:electron && electron-builder --win appx",
     "smoke": "npm run build && npm run build:electron && node scripts/smoke-electron.cjs"
   },
-  "dependencies": {
-    "@cube/platform": "*",
-    "@cube/ui": "*"
-  },
   "devDependencies": {
+    "@cube/platform": "*",
+    "@cube/ui": "*",
     "electron": "32.3.3",
     "electron-builder": "^25.1.8",
     "esbuild": "^0.24.0"

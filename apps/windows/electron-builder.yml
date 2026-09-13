@@ -8,6 +8,13 @@
 # reserved in Partner Center, so the three values under `appx` below must be
 # replaced with your own before submitting. Everything else works as-is.
 
+# The electron version in package.json is pinned exactly rather than to a
+# range, and has to stay that way. npm hoists electron to the workspace root,
+# so electron-builder cannot find it under apps/windows and falls back to
+# reading the version out of package.json — which it accepts only when it is
+# exact. A caret there fails the Windows build with "Cannot compute electron
+# version from installed node modules".
+
 appId: com.fibonacci0112.cubesolverpro
 productName: Cube Solver Pro
 

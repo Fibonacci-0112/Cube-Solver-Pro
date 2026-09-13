@@ -25,6 +25,9 @@ jobs:
           cache: npm
 
       - run: npm ci
+      # Also compiles packages/core a second time without the DOM library, so a
+      # platform-specific global creeping into the shared code fails here rather
+      # than on one of the three devices.
       - name: Type check
         run: npm run typecheck
       - name: Unit tests
@@ -32,20 +35,28 @@ jobs:
       - name: Build the web app
         run: npm run build
 
+      # Every shell is built on every change. They share all their source, so a
+      # break in one is a break in all three — but only if something builds them.
+      - name: Build the Windows renderer
+        run: npm run build --workspace @cube/windows
+      - name: Build the Android web assets
+        run: npm run build --workspace @cube/android
+
       - name: Build the desktop shell
-        run: npm run build:electron
+        run: npm run build:electron --workspace @cube/windows
 
       # Launches the real Electron shell and checks the things the custom
       # app:// scheme exists to make work — a secure origin, a usable local
       # database, and a scramble actually being generated.
       - name: Smoke-test the desktop shell
         run: xvfb-run -a npx electron --no-sandbox scripts/smoke-electron.cjs
+        working-directory: apps/windows
         timeout-minutes: 5
 
       - uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: dist
+          path: apps/web/dist
           retention-days: 14
 
   windows:
@@ -60,11 +71,12 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build
-      - run: npm run build:electron
+      - run: npm run build --workspace @cube/windows
+      - run: npm run build:electron --workspace @cube/windows
 
       - name: Build the installer
         run: npx electron-builder --win nsis --publish never
+        working-directory: apps/windows
 
       # Only worth building once the Partner Center identity is configured:
       # a package whose identity does not match the listing cannot be uploaded.
@@ -77,13 +89,14 @@ jobs:
           -c.appx.identityName="${{ vars.APPX_IDENTITY_NAME }}"
           -c.appx.publisher="${{ vars.APPX_PUBLISHER }}"
           -c.appx.publisherDisplayName="${{ vars.APPX_PUBLISHER_DISPLAY_NAME }}"
+        working-directory: apps/windows
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-packages
           path: |
-            dist-release/*.exe
-            dist-release/*.appx
-            dist-release/*.msix
+            apps/windows/dist-release/*.exe
+            apps/windows/dist-release/*.appx
+            apps/windows/dist-release/*.msix
           if-no-files-found: error
           retention-days: 14

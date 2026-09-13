@@ -3,8 +3,11 @@
 An app to help improve your Rubik's cube abilities. Time and track your solves,
 generate random scrambles and train algorithms.
 
-One TypeScript codebase runs on **Windows** (as a desktop app, packaged for the
-Microsoft Store) and on the **web** (as an installable, offline-capable page).
+One TypeScript codebase runs on **Android** (a Play Store app), on **Windows**
+(a desktop app, packaged for the Microsoft Store) and on the **web** (an
+installable, offline-capable page). The three share every screen, the solver and
+the statistics; what differs between them is listed in one file,
+`packages/platform/src/types.ts`, and comes to about six methods.
 
 ---
 
@@ -54,26 +57,38 @@ back, and also reads csTimer exports.
 ```bash
 npm install
 npm run dev          # web app at http://localhost:5173
-npm test             # unit tests
-npm run typecheck
+npm test             # unit tests, every package
+npm run typecheck    # also proves packages/core compiles without the DOM
 ```
 
 To run the desktop shell against the dev server:
 
 ```bash
-npm run electron:dev
+npm run dev --workspace @cube/windows
 ```
 
 ## Building
 
 ```bash
-npm run build        # the web app, into dist/
-npm run dist:win     # Windows .exe installer, into dist-release/
-npm run dist:store   # Windows MSIX/AppX package for the Microsoft Store
+npm run build          # the web app, into apps/web/dist/
+npm run dist:win       # Windows .exe installer, into apps/windows/dist-release/
+npm run dist:store     # Windows MSIX/AppX package for the Microsoft Store
+npm run android:build  # Android APK, into apps/android/android/
 ```
 
 The Windows packages must be built on Windows. The CI workflow does this on
 every push and uploads them as artifacts.
+
+The Android build needs the native project generated once, which requires the
+Android SDK and a JDK:
+
+```bash
+cd apps/android
+npx cap add android    # creates apps/android/android/, commit it
+```
+
+After that, `npm run android:sync` rebuilds the web assets and copies them in,
+and `npm run android:open` opens the project in Android Studio.
 
 ### Publishing to the Microsoft Store
 
@@ -133,22 +148,44 @@ database and generates a scramble.
 
 ## Layout
 
+Three packages and three shells. The split is not decoration: it is what lets
+one team claim three platforms without maintaining three apps.
+
 ```
-src/cube/        cube models, notation, solvers, scramble generation
-src/algs/        F2L/OLL/PLL data, case identification, drill logic
-src/stats/       solve records and the average rules
-src/db/          local storage, import and export
-src/state/       app state, the timer, the scramble queue
-src/components/  cube diagrams, charts, shared pieces
-src/routes/      the screens
-src/tutorials/   lesson content and the solve-along analysis
-electron/        desktop main and preload processes
+packages/core/        everything that does not care where it runs
+  cube/               cube models, notation, solvers, scramble generation
+  algs/               F2L/OLL/PLL data, case identification, drill logic
+  stats/              solve records and the average rules
+  data/               the save-file format
+  diagram/            projection and arrow geometry for the case pictures
+  tutorials/          the solve-along analysis
+
+packages/platform/    the six things a machine has to provide
+  storage/            IndexedDB, and an in-memory fallback
+  files/              export and import
+
+packages/ui/          every screen, shared by all three shells
+  components/         cube diagrams, charts, shared pieces
+  routes/             the screens
+  state/              app state, the timer, the scramble queue
+  tutorials/          lesson content
+
+apps/web/             Vite + service worker
+apps/windows/         Electron main and preload processes
+apps/android/         Capacitor, plus the one adapter Android needs
 ```
+
+`packages/core` is compiled a second time without the DOM library
+(`npm run typecheck`), so a stray `document` or `localStorage` in it is a
+compile error rather than a crash on one platform months later. That is also
+why almost all of the test suite runs in Node: the cube model, the solver, case
+recognition, the statistics and the diagram geometry are tested once, not three
+times on three devices.
 
 ### Adding another algorithm set
 
 A set is self-describing: it knows how to identify one of its cases from a cube
 state, how to enumerate every case that can exist, and what must be true of a
 case state. Write a data file exporting an `AlgSet` and add it to the list in
-`src/algs/index.ts` — the shared test then verifies it automatically, including
-full coverage of whatever case space it defines.
+`packages/core/src/algs/index.ts` — the shared test then verifies it
+automatically, including full coverage of whatever case space it defines.

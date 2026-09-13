@@ -230,6 +230,13 @@ PublishScripts/
 **/[Pp]ackages/*
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
+# ...and except this repository's own /packages, which is the npm workspace
+# holding @cube/core, @cube/platform and @cube/ui — source, not restored
+# NuGet output. Without these two lines the rule above silently drops every
+# new file added there, while files that were moved in stay tracked, so the
+# tree looks half-committed rather than obviously broken.
+!/packages/*
+!/packages/**
 # Uncomment if necessary however generally it will be regenerated when needed
 #!**/[Pp]ackages/repositories.config
 # NuGet v3's project.json files produces more ignorable files

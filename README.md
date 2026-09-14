@@ -61,6 +61,20 @@ npm test             # unit tests, every package
 npm run typecheck    # also proves packages/core compiles without the DOM
 ```
 
+On PowerShell, change into the downloaded project directory before running the
+commands (entering a directory path by itself attempts to execute it):
+
+```powershell
+Set-Location "C:\path\to\Cube-Solver-Pro"
+npm install
+npm run dev
+```
+
+The repository explicitly allows the install scripts used by Electron and
+esbuild. These scripts download/select the platform-specific binaries required
+by the Windows app and build tooling; recent npm releases otherwise skip them
+and print an `install-scripts` warning.
+
 To run the desktop shell against the dev server:
 
 ```bash

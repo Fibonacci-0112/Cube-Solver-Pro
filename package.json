@@ -5,6 +5,10 @@
   "description": "Timer, scramble generator and algorithm trainer for speedcubing. Runs on Android, Windows and the web.",
   "private": true,
   "type": "module",
+  "allowScripts": {
+    "electron": true,
+    "esbuild": true
+  },
   "workspaces": [
     "packages/*",
     "apps/*"

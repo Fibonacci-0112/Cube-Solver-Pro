@@ -61,8 +61,8 @@ export function newId(prefix: string): string {
 
 /**
  * csTimer stores each solve as `[[penalty, timeMs], scramble, comment, unixSeconds]`,
- * where the penalty is 0, 2000 for a +2, or -1 for a DNF, and the time already
- * includes the +2. Session names live in a JSON string inside `properties`.
+ * where the penalty is 0, 2000 for a +2, or -1 for a DNF, and the time excludes
+ * the penalty. Session names live in a JSON string inside `properties`.
  */
 function parseCsTimer(raw: Record<string, unknown>): ImportResult | null {
   const sessionKeys = Object.keys(raw).filter((key) => /^session\d+$/.test(key));
@@ -98,8 +98,7 @@ function parseCsTimer(raw: Record<string, unknown>): ImportResult | null {
       if (!Array.isArray(row) || !Array.isArray(row[0])) continue;
       const [penaltyRaw, timeRaw] = row[0] as [number, number];
       const penalty: Penalty = penaltyRaw === -1 ? 'dnf' : penaltyRaw === 2000 ? 'plus2' : 'none';
-      // csTimer's stored time already includes the +2, so take it back off.
-      const timeMs = penalty === 'plus2' ? Number(timeRaw) - 2000 : Number(timeRaw);
+      const timeMs = Number(timeRaw);
       if (!Number.isFinite(timeMs) || timeMs < 0) continue;
       const createdAt = typeof row[3] === 'number' ? row[3] * 1000 : Date.now();
       earliest = Math.min(earliest, createdAt);

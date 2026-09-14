@@ -92,7 +92,7 @@ export const useApp = create<AppState>()((set, get) => ({
 
   async init() {
     const store = db();
-    const settings = await store.getSettings();
+    let settings = await store.getSettings();
     let sessions = await store.listSessions();
 
     // A first run has no session; make one so the timer is usable immediately.
@@ -106,6 +106,13 @@ export const useApp = create<AppState>()((set, get) => ({
       forPuzzle.find((s) => s.id === settings.currentSessionId) ??
       forPuzzle[forPuzzle.length - 1] ??
       sessions[0];
+
+    // Imports can remove the selected puzzle's sessions. Keep the fallback
+    // session, puzzle picker and persisted selection in agreement.
+    if (current && (settings.currentPuzzle !== current.puzzle || settings.currentSessionId !== current.id)) {
+      settings = { ...settings, currentPuzzle: current.puzzle, currentSessionId: current.id };
+      await store.saveSettings(settings);
+    }
 
     const stats = await store.listTrainerStats();
     set({

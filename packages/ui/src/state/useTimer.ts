@@ -58,6 +58,11 @@ export interface TimerState {
 
 const OVER_TIME_DNF_SECONDS = 2;
 
+function inspectionPenalty(elapsedSeconds: number, limitSeconds: number): Penalty {
+  if (elapsedSeconds > limitSeconds + OVER_TIME_DNF_SECONDS) return 'dnf';
+  return elapsedSeconds > limitSeconds ? 'plus2' : 'none';
+}
+
 export function useTimer(options: TimerOptions): TimerState {
   const { inspection, inspectionSeconds, holdToStartMs, onComplete, disabled } = options;
 
@@ -137,8 +142,7 @@ export function useTimer(options: TimerOptions): TimerState {
     const id = window.setInterval(() => {
       const elapsed = (performance.now() - inspectionStartedAt.current) / 1000;
       setDisplayMs(Math.max(0, inspectionSeconds - elapsed) * 1000);
-      if (elapsed > inspectionSeconds + OVER_TIME_DNF_SECONDS) setPendingPenalty('dnf');
-      else if (elapsed > inspectionSeconds) setPendingPenalty('plus2');
+      setPendingPenalty(inspectionPenalty(elapsed, inspectionSeconds));
     }, 50);
     return () => window.clearInterval(id);
   }, [phase, inspectionSeconds]);
@@ -174,7 +178,14 @@ export function useTimer(options: TimerOptions): TimerState {
         return;
       }
 
-      if (armed) beginSolve(at);
+      if (armed) {
+        // The interval only updates the warning. Judge the actual release,
+        // even when it falls between ticks or its handler is delivered late.
+        if (phase === 'inspection') {
+          setPendingPenalty(inspectionPenalty((at - inspectionStartedAt.current) / 1000, inspectionSeconds));
+        }
+        beginSolve(at);
+      }
       setArmed(false);
     },
     [holding, phase, inspection, inspectionSeconds, armed, beginSolve],

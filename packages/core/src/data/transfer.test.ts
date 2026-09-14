@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { EXPORT_FORMAT, buildExport, parseImport } from './transfer';
-import type { Solve } from '../stats/solves';
+import { effectiveMs, type Solve } from '../stats/solves';
 
 const solve = (over: Partial<Solve> = {}): Solve => ({
   id: 'solve-1',
@@ -74,9 +74,10 @@ describe('csTimer import', () => {
     expect(dnf.penalty).toBe('dnf');
   });
 
-  it('stores the raw time, since csTimer folds the +2 into its own', () => {
+  it('preserves the raw time and applies the separate csTimer penalty once', () => {
     const [, plusTwo] = parseImport(csTimer).solves;
-    expect(plusTwo.timeMs).toBe(13_000);
+    expect(plusTwo.timeMs).toBe(15_000);
+    expect(effectiveMs(plusTwo)).toBe(17_000);
   });
 
   it('keeps the session name', () => {

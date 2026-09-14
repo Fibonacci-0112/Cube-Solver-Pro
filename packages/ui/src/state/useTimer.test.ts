@@ -92,4 +92,23 @@ describe('useTimer', () => {
 
     expect(completed[0].timeMs).toBe(7_000);
   });
+
+  it.each([
+    [15_000, 15_025, 'plus2'],
+    [17_000, 17_025, 'dnf'],
+    [15_050, 14_999, 'none'],
+    [17_050, 16_999, 'plus2'],
+  ] as const)('judges release at %i / %i ms independently of the warning tick', (clockAt, releasedAt, penalty) => {
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    const { view, completed } = setup({ inspection: true });
+    act(() => view.result.current.press(0));
+    act(() => view.result.current.release(0));
+    act(() => view.result.current.press(releasedAt - HOLD_MS));
+    vi.spyOn(performance, 'now').mockReturnValue(clockAt);
+    act(() => vi.advanceTimersByTime(HOLD_MS));
+    act(() => view.result.current.release(releasedAt));
+    act(() => view.result.current.press(releasedAt + 10_000));
+
+    expect(completed).toEqual([{ timeMs: 10_000, penalty }]);
+  });
 });

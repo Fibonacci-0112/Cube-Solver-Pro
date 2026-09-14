@@ -46,6 +46,8 @@ const BACKGROUND = '#6f6f75';
 
 const STROKE = '#0b0b0d';
 const ARROW = '#000000';
+/** A light keyline keeps printed-style PLL arrows legible over the black grid. */
+const ARROW_KEYLINE = '#ffffff';
 
 interface NetProps {
   cube: PuzzleCube;
@@ -270,8 +272,11 @@ export function LastLayerDiagram({
     };
   });
 
-  const headSize = cell * 0.42;
-  const arrowWidth = cell * 0.085;
+  // PLL reference sheets use slim, open arrowheads rather than large filled
+  // triangles. They leave much more of the recognition pattern visible.
+  const headSize = cell * 0.34;
+  const arrowWidth = cell * 0.075;
+  const arrowKeylineWidth = arrowWidth + cell * 0.11;
   const label =
     mode === 'orientation'
       ? 'Last layer orientation'
@@ -301,7 +306,14 @@ export function LastLayerDiagram({
             markerHeight={headSize}
             orient="auto-start-reverse"
           >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill={ARROW} />
+            <path
+              d="M 1 1 L 9 5 L 1 9"
+              fill="none"
+              stroke={ARROW}
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </marker>
         </defs>
       )}
@@ -325,7 +337,13 @@ export function LastLayerDiagram({
         sticker(`r-${i}`, bar + 3 * cell, bar + i * cell, bar, cell, colour),
       )}
 
-      <g fill="none" strokeLinecap="butt">
+      <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* The white keyline is the equivalent of the knockout used in the
+            PDF artwork: shafts remain distinct where they cross a grid seam
+            or another arrow. Arrowheads are only applied to the black pass. */}
+        <g stroke={ARROW_KEYLINE} strokeWidth={arrowKeylineWidth}>
+          {movements.map((arrow) => <line key={`keyline-${arrow.key}`} {...arrow.line} />)}
+        </g>
         <g stroke={ARROW} strokeWidth={arrowWidth}>
           {movements.map((arrow) => (
             <line

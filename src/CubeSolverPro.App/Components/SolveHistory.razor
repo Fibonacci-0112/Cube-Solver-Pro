@@ -1,0 +1,30 @@
+@inject AppState AppState
+
+<div class="solve-history">
+    <h2>Recent solves</h2>
+    @if (!Solves.Any())
+    {
+        <p class="muted">Your completed solves will appear here.</p>
+    }
+    else
+    {
+        @foreach (var solve in Solves)
+        {
+            <article>
+                <time>@DateTimeOffset.FromUnixTimeMilliseconds(solve.CreatedAt).ToLocalTime().ToString("g")</time>
+                <strong>@(solve.Penalty == Penalty.Dnf ? "DNF" : SolveStatistics.FormatTime(SolveStatistics.EffectiveMs(solve)))</strong>
+                <span class="mono">@solve.Scramble</span>
+                <div>
+                    <button class="compact" @onclick="() => AppState.SetPenaltyAsync(solve, Penalty.None)">OK</button>
+                    <button class="compact" @onclick="() => AppState.SetPenaltyAsync(solve, Penalty.Plus2)">+2</button>
+                    <button class="compact" @onclick="() => AppState.SetPenaltyAsync(solve, Penalty.Dnf)">DNF</button>
+                    <button class="compact danger" @onclick="() => AppState.DeleteSolveAsync(solve.Id)">Delete</button>
+                </div>
+            </article>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<Solve> Solves { get; set; } = [];
+}

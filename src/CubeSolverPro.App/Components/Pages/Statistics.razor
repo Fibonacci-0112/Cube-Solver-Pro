@@ -1,2 +1,38 @@
 @page "/statistics"
-<h1>Statistics</h1><p>The statistics workspace is ready for native, offline use.</p>
+@inject AppState AppState
+
+<div class="page">
+    <h1>Statistics</h1>
+    <p>Session results for @Scrambles.Puzzles[AppState.CurrentPuzzle].Name. Averages drop the fastest and slowest attempts.</p>
+    <label>Session
+        <select value="@AppState.CurrentSessionId" @onchange="SessionChanged">
+            @foreach (var session in AppState.PuzzleSessions)
+            {
+                <option value="@session.Id">@session.Name</option>
+            }
+        </select>
+    </label>
+    <div class="stat-grid">
+        <article><small>solves</small><strong>@AppState.Solves.Count</strong></article>
+        <article><small>completed</small><strong>@AppState.Solves.Count(x => x.Penalty != Penalty.Dnf)</strong></article>
+        <article><small>best</small><strong>@SolveStatistics.FormatTime(SolveStatistics.Best(AppState.Solves))</strong></article>
+        <article><small>mean</small><strong>@Mean</strong></article>
+        @foreach (var count in new[] { 5, 12, 50, 100 })
+        {
+            <article><small>ao@count</small><strong>@Average(count)</strong></article>
+        }
+    </div>
+    <SolveHistory Solves="AppState.Solves.Reverse()" />
+</div>
+
+@code {
+    Task SessionChanged(ChangeEventArgs args) => AppState.SelectSessionAsync(args.Value?.ToString() ?? "");
+    string Mean => AppState.Solves.Select(SolveStatistics.EffectiveMs).Any(x => x is null)
+        ? "DNF"
+        : SolveStatistics.FormatTime(AppState.Solves.Count == 0 ? null : AppState.Solves.Average(x => SolveStatistics.EffectiveMs(x)!.Value));
+    string Average(int count)
+    {
+        var value = SolveStatistics.Average(AppState.Solves, count, out var dnf);
+        return dnf ? "DNF" : SolveStatistics.FormatTime(value);
+    }
+}

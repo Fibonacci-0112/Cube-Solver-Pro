@@ -1,2 +1,23 @@
 @inherits LayoutComponentBase
-<div class="shell"><NavMenu/><main>@Body</main></div>
+@implements IDisposable
+@inject AppState AppState
+
+@if (!AppState.Ready)
+{
+    <div class="booting">Opening your cube history…</div>
+}
+else
+{
+    <div class="shell"><NavMenu/><main>@Body</main></div>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        AppState.Changed += StateChanged;
+        await AppState.InitializeAsync();
+    }
+
+    void StateChanged() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() => AppState.Changed -= StateChanged;
+}

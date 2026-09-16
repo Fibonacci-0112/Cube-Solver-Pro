@@ -1,9 +1,169 @@
-@page "/" @implements IAsyncDisposable @inject IJSRuntime JS
-<section class="timer @(running?"running":"") @(armed?"armed":"")" @onpointerdown="Down" @onpointerup="Up"><p class="scramble">@scramble</p><CubeDiagram State="cube"/><output>@Display</output><p>@status</p></section>
-@code{long started;bool running,armed,stopping;string status="Hold space or touch to start";string scramble="";PuzzleCube cube=PuzzleCube.Solved(3);CancellationTokenSource? hold;DotNetObjectReference<Timer>? self;
- protected override async Task OnInitializedAsync(){Next();self=DotNetObjectReference.Create(this);await JS.InvokeVoidAsync("cubeTimer.attach",self);}
- void Next(){var x=Scrambles.Generate("333");scramble=x.Text;cube=x.State;}
- async Task Down(){if(running){await Stop();return;}hold=new();try{await Task.Delay(300,hold.Token);armed=true;status="Release to start";StateHasChanged();}catch(OperationCanceledException){}}
- Task Up(){hold?.Cancel();if(armed&&!running){armed=false;running=true;started=Environment.TickCount64;status="Solving";}return Task.CompletedTask;}
- async Task Stop(){if(!running||stopping)return;stopping=true;var elapsed=Environment.TickCount64-started;running=false;status=$"{SolveStatistics.FormatTime(elapsed)} — +2 / DNF available in solve history";Next();stopping=false;await InvokeAsync(StateHasChanged);}
- string Display=>running?"…":status.Split(' ')[0];[JSInvokable]public Task KeyDown()=>Down();[JSInvokable]public Task KeyUp()=>running?Stop():Up();public async ValueTask DisposeAsync(){hold?.Cancel();if(self!=null)await JS.InvokeVoidAsync("cubeTimer.detach");self?.Dispose();}}
+@page "/"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject AppState AppState
+
+<section class="timer-page">
+    <div class="toolbar">
+        <label>Puzzle
+            <select value="@AppState.CurrentPuzzle" @onchange="PuzzleChanged">
+                @foreach (var puzzle in Scrambles.Puzzles.Values)
+                {
+                    <option value="@puzzle.Id">@puzzle.Name</option>
+                }
+            </select>
+        </label>
+        <label>Session
+            <select value="@AppState.CurrentSessionId" @onchange="SessionChanged">
+                @foreach (var session in AppState.PuzzleSessions)
+                {
+                    <option value="@session.Id">@session.Name</option>
+                }
+            </select>
+        </label>
+        <button @onclick="NewSession">New session</button>
+        <button @onclick="Next">New scramble</button>
+    </div>
+
+    <div class="timer @(running ? "running" : "") @(armed ? "armed" : "")"
+         @onpointerdown="Down" @onpointerup="Up" @onpointerleave="CancelHold">
+        <p class="scramble">@scramble</p>
+        <CubeDiagram State="cube" />
+        <output>@Display</output>
+        <p>@status</p>
+    </div>
+
+    <div class="stat-grid">
+        <article><small>solves</small><strong>@AppState.Solves.Count</strong></article>
+        <article><small>best</small><strong>@SolveStatistics.FormatTime(SolveStatistics.Best(AppState.Solves))</strong></article>
+        <article><small>ao5</small><strong>@Average(5)</strong></article>
+        <article><small>ao12</small><strong>@Average(12)</strong></article>
+    </div>
+    <SolveHistory Solves="AppState.Solves.Reverse().Take(12)" />
+</section>
+
+@code {
+    long started;
+    long elapsed;
+    bool running;
+    bool armed;
+    bool stopping;
+    string status = "Hold space or touch to start";
+    string scramble = "";
+    PuzzleCube cube = PuzzleCube.Solved(3);
+    CancellationTokenSource? hold;
+    CancellationTokenSource? ticker;
+    DotNetObjectReference<Timer>? self;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Next();
+        self = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("cubeTimer.attach", self);
+    }
+
+    void Next()
+    {
+        var result = Scrambles.Generate(AppState.CurrentPuzzle);
+        scramble = result.Text;
+        cube = result.State;
+    }
+
+    async Task PuzzleChanged(ChangeEventArgs args)
+    {
+        await AppState.SetPuzzleAsync(args.Value?.ToString() ?? "333");
+        Next();
+    }
+
+    Task SessionChanged(ChangeEventArgs args) => AppState.SelectSessionAsync(args.Value?.ToString() ?? "");
+
+    async Task NewSession()
+    {
+        await AppState.CreateSessionAsync($"Session {AppState.PuzzleSessions.Count() + 1}");
+    }
+
+    async Task Down()
+    {
+        if (running) { await Stop(); return; }
+        hold?.Cancel();
+        hold = new();
+        try
+        {
+            await Task.Delay(AppState.Settings.HoldToStartMs, hold.Token);
+            armed = true;
+            status = "Release to start";
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    Task Up()
+    {
+        hold?.Cancel();
+        if (armed && !running)
+        {
+            armed = false;
+            running = true;
+            elapsed = 0;
+            started = Environment.TickCount64;
+            status = "Press any key or tap to stop";
+            ticker = new();
+            _ = Tick(ticker.Token);
+        }
+        return Task.CompletedTask;
+    }
+
+    void CancelHold()
+    {
+        if (running) return;
+        hold?.Cancel();
+        armed = false;
+        status = "Hold space or touch to start";
+    }
+
+    async Task Tick(CancellationToken token)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(31));
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                elapsed = Environment.TickCount64 - started;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    async Task Stop()
+    {
+        if (!running || stopping) return;
+        stopping = true;
+        elapsed = Environment.TickCount64 - started;
+        ticker?.Cancel();
+        running = false;
+        await AppState.AddSolveAsync(scramble, elapsed);
+        status = $"Saved {SolveStatistics.FormatTime(elapsed)}";
+        Next();
+        stopping = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    string Display => running && AppState.Settings.HideTimeWhileRunning ? "solving…" : SolveStatistics.FormatTime(elapsed);
+    string Average(int count)
+    {
+        var value = SolveStatistics.Average(AppState.Solves, count, out var dnf);
+        return dnf ? "DNF" : SolveStatistics.FormatTime(value);
+    }
+
+    [JSInvokable] public Task KeyDown() => running ? Stop() : Down();
+    [JSInvokable] public Task KeyUp() => running ? Task.CompletedTask : Up();
+
+    public async ValueTask DisposeAsync()
+    {
+        hold?.Cancel();
+        ticker?.Cancel();
+        if (self is not null) await JS.InvokeVoidAsync("cubeTimer.detach");
+        self?.Dispose();
+    }
+}

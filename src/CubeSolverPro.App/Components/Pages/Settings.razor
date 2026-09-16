@@ -1,2 +1,60 @@
 @page "/settings"
-<h1>Settings</h1><p>The settings workspace is ready for native, offline use.</p>
+@inject AppState AppState
+@inject IAppStore Store
+@inject IFileTransfer Files
+@inject IAppInfo Info
+
+<div class="page settings-page">
+    <h1>Settings</h1>
+    <section class="card">
+        <h2>Timing</h2>
+        <label class="setting"><span>Hide the running time</span><input type="checkbox" checked="@AppState.Settings.HideTimeWhileRunning" @onchange="HideTimeChanged" /></label>
+        <label class="setting"><span>Hold before starting</span><input type="number" min="0" max="1000" step="50" value="@AppState.Settings.HoldToStartMs" @onchange="HoldChanged" /> ms</label>
+    </section>
+    <section class="card">
+        <h2>Your data</h2>
+        <p>Solves stay on this device. Export a backup to move them to another Cube Solver Pro installation.</p>
+        <div class="row"><button @onclick="Export">Export everything</button><button @onclick="Import">Import a file</button></div>
+        @if (!string.IsNullOrEmpty(message)) { <p class="notice">@message</p> }
+    </section>
+    <section class="card">
+        <h2>About</h2>
+        <p>@Info.Name @Info.Version · @Info.Platform</p>
+    </section>
+</div>
+
+@code {
+    string? message;
+
+    Task HideTimeChanged(ChangeEventArgs args) => AppState.SaveSettingsAsync(AppState.Settings with { HideTimeWhileRunning = args.Value is true });
+
+    Task HoldChanged(ChangeEventArgs args)
+    {
+        _ = int.TryParse(args.Value?.ToString(), out var value);
+        return AppState.SaveSettingsAsync(AppState.Settings with { HoldToStartMs = Math.Clamp(value, 0, 1000) });
+    }
+
+    async Task Export()
+    {
+        var export = await Store.ExportAsync();
+        var saved = await Files.SaveAndShareAsync($"cube-solver-pro-{DateTime.UtcNow:yyyy-MM-dd}.json", Transfer.Serialize(export));
+        if (saved) message = "Backup opened in the system share sheet.";
+    }
+
+    async Task Import()
+    {
+        var text = await Files.PickTextAsync();
+        if (text is null) return;
+        try
+        {
+            var result = Transfer.ParseImport(text);
+            await Store.ImportAsync(result);
+            await AppState.ReloadAsync();
+            message = $"Imported {result.Solves.Count} solves across {result.Sessions.Count} sessions from {result.Source}.";
+        }
+        catch (FormatException error)
+        {
+            message = error.Message;
+        }
+    }
+}

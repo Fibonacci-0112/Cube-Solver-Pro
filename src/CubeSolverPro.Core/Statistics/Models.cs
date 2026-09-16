@@ -1,0 +1,10 @@
+using System.Text.Json.Serialization;
+namespace CubeSolverPro.Core.Statistics;
+[JsonConverter(typeof(JsonStringEnumConverter<Penalty>))] public enum Penalty { [JsonStringEnumMemberName("none")] None,[JsonStringEnumMemberName("plus2")] Plus2,[JsonStringEnumMemberName("dnf")] Dnf }
+public sealed record Solve([property:JsonPropertyName("id")]string Id,[property:JsonPropertyName("sessionId")]string SessionId,[property:JsonPropertyName("puzzle")]string Puzzle,[property:JsonPropertyName("scramble")]string Scramble,[property:JsonPropertyName("timeMs")]long TimeMs,[property:JsonPropertyName("penalty")]Penalty Penalty,[property:JsonPropertyName("createdAt")]long CreatedAt,[property:JsonPropertyName("comment")]string? Comment=null);
+public sealed record Session([property:JsonPropertyName("id")]string Id,[property:JsonPropertyName("name")]string Name,[property:JsonPropertyName("puzzle")]string Puzzle,[property:JsonPropertyName("createdAt")]long CreatedAt);
+public static class SolveStatistics { public const long PlusTwoMs=2000; public static long? EffectiveMs(Solve s)=>s.Penalty==Penalty.Dnf?null:s.TimeMs+(s.Penalty==Penalty.Plus2?PlusTwoMs:0);public static int TrimCount(int n)=>Math.Max(1,(int)Math.Ceiling(n*.05));
+ public static double? Average(IReadOnlyList<Solve>s,int n,out bool dnf){dnf=false;if(s.Count<n)return null;var recent=s.Skip(s.Count-n).ToArray();var trim=TrimCount(n);if(recent.Count(x=>x.Penalty==Penalty.Dnf)>trim){dnf=true;return null;}var times=recent.Select(x=>(double)(EffectiveMs(x)??long.MaxValue)).Order().Skip(trim).Take(n-2*trim).ToArray();if(times.Any(x=>x==long.MaxValue)){dnf=true;return null;}return times.Average();}
+ public static double? Best(IEnumerable<Solve>s)=>s.Select(EffectiveMs).Where(x=>x.HasValue).Select(x=>(double)x!.Value).DefaultIfEmpty(double.NaN).Min() is var v&&double.IsNaN(v)?null:v;
+ public static string FormatTime(double? ms){if(ms is null)return "—";var t=ms.Value/1000;return t<60?t.ToString("0.00"):$"{(int)(t/60)}:{t%60:00.00}";}
+}

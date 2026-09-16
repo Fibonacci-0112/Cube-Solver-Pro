@@ -1,0 +1,2 @@
+<div class="interactive"><CubeDiagram State="State"/><div class="move-pad">@foreach(var face in Geometry.Faces){<button @onclick="()=>Turn(face)">@face</button>}</div></div>
+@code{[Parameter]public PuzzleCube State{get;set;}=PuzzleCube.Solved(3);[Parameter]public EventCallback<PuzzleCube> StateChanged{get;set;}async Task Turn(Face f){State.Apply(new(f,new(MoveSpanKind.Layers),1));await StateChanged.InvokeAsync(State);}}

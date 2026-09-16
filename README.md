@@ -1,205 +1,35 @@
 # Cube Solver Pro
 
-An app to help improve your Rubik's cube abilities. Time and track your solves,
-generate random scrambles and train algorithms.
+Cube Solver Pro is a native **.NET MAUI Blazor Hybrid** speedcubing timer, scramble generator, algorithm trainer, statistics tracker, and 27-lesson tutorial. Android and Windows share a platform-independent C# cube engine and local SQLite data store. The legacy TypeScript application remains temporarily under `apps/` and `packages/` as the behavioral reference until all parity gates pass.
 
-One TypeScript codebase runs on **Android** (a Play Store app), on **Windows**
-(a desktop app, packaged for the Microsoft Store) and on the **web** (an
-installable, offline-capable page). The three share every screen, the solver and
-the statistics; what differs between them is listed in one file,
-`packages/platform/src/types.ts`, and comes to about six methods.
+## Prerequisites
 
----
-
-## What it does
-
-**Timer.** Hold the spacebar until it goes green, release to start, press
-anything to stop — or hold the panel on a touchscreen. Optional WCA inspection
-with the two-second and DNF penalties for overrunning it. Mark a solve `+2` or
-`DNF`, write a note on it, or delete it.
-
-**Scrambles for 2x2 through 7x7.** 2x2 and 3x3 are *random-state*: a cube
-position is drawn uniformly at random and then solved backwards, so every
-position is equally likely. 4x4 and up use the random move sequences the WCA
-specifies, at the lengths it specifies. The next scramble is generated in the
-background while you solve the current one, so the timer never waits.
-
-**Statistics.** Averages follow competition rules — the fastest and slowest
-solves are dropped, a DNF sorts as worse than any time, and an average holding
-more DNFs than it can drop is itself a DNF. Trend line with rolling averages,
-distribution of your times, and the full solve list.
-
-**Algorithm trainer.** All 41 F2L, 57 OLL and 21 PLL cases. Set the case up on
-your cube with the moves shown, solve it, and the trainer records a time per
-case — then weights what comes next towards cases you have never seen, cases
-you are still learning, and cases that are slow compared with the rest of your
-set. Setups include a random top-layer turn so you meet each case from
-different angles.
-
-**27 tutorials.** Notation and the beginner method, the move to CFOP and each
-of its steps, guides on lookahead, finger tricks, colour neutrality, inspection
-and practice routines, big-cube reduction and parity, and two **solve-alongs**:
-turn a cube in the app and it reads the position and tells you the next step,
-naming the exact F2L, OLL or PLL case in front of you.
-
-Every cube picture in the app is drawn from a real cube state rather than
-stored as an image, so a picture cannot disagree with the algorithm beside it.
-
-## Your data
-
-Everything is stored on the device, in IndexedDB. There is no account, no
-server and nothing is uploaded — which also means there is no backup unless you
-make one. **Settings → Export everything** writes a JSON file; import reads that
-back, and also reads csTimer exports.
-
-## Running it
+Install the .NET 9 SDK and MAUI workload:
 
 ```bash
-npm install
-npm run dev          # web app at http://localhost:5173
-npm test             # unit tests, every package
-npm run typecheck    # also proves packages/core compiles without the DOM
+dotnet workload install maui
 ```
 
-On PowerShell, change into the downloaded project directory before running the
-commands (entering a directory path by itself attempts to execute it):
+Android builds also require Android SDK 35, a JDK supported by .NET MAUI, and accepted Android SDK licenses. Windows builds require Windows 10/11, Visual Studio 2022 Build Tools with **.NET Multi-platform App UI development**, Windows App SDK tooling, and the Windows 10 SDK (10.0.19041 or newer).
 
-```powershell
-Set-Location "C:\path\to\Cube-Solver-Pro"
-npm install
-npm run dev
-```
-
-The repository explicitly allows the install scripts used by Electron and
-esbuild. These scripts download/select the platform-specific binaries required
-by the Windows app and build tooling; recent npm releases otherwise skip them
-and print an `install-scripts` warning.
-
-To run the desktop shell against the dev server:
+## Build and test
 
 ```bash
-npm run dev --workspace @cube/windows
+dotnet restore CubeSolverPro.sln
+dotnet build tests/CubeSolverPro.Core.Tests/CubeSolverPro.Core.Tests.csproj
+dotnet test tests/CubeSolverPro.Core.Tests/CubeSolverPro.Core.Tests.csproj
+dotnet build src/CubeSolverPro.App/CubeSolverPro.App.csproj -f net9.0-android
+dotnet build src/CubeSolverPro.App/CubeSolverPro.App.csproj -f net9.0-windows10.0.19041.0
 ```
 
-## Building
+Run from Visual Studio by selecting an Android emulator/device or **Windows Machine**, or use `dotnet build -t:Run -f <target-framework>`.
 
-```bash
-npm run build          # the web app, into apps/web/dist/
-npm run dist:win       # Windows .exe installer, into apps/windows/dist-release/
-npm run dist:store     # Windows MSIX/AppX package for the Microsoft Store
-npm run android:build  # Android APK, into apps/android/android/
-```
+## Data migration
 
-The Windows packages must be built on Windows. The CI workflow does this on
-every push and uploads them as artifacts.
+The app stores sessions, solves, settings, and trainer progress in `cube-solver-pro.db3`. In **Settings**, select an existing React Cube Solver Pro JSON export (or a csTimer JSON export). Native import retains existing string identifiers, Unix-millisecond timestamps, notes, scrambles, and penalties. Imports commit in one SQLite transaction. Export creates the version 1 `cube-solver-pro-export` JSON format and opens the platform share/save UI; cancellation leaves data unchanged.
 
-The Android build needs the native project generated once, which requires the
-Android SDK and a JDK:
+## Signing and publication
 
-```bash
-cd apps/android
-npx cap add android    # creates apps/android/android/, commit it
-```
+For Google Play, create an upload keystore, keep its secrets outside source control, and publish an Android App Bundle with `dotnet publish -f net9.0-android -c Release -p:AndroidPackageFormat=aab` plus the `AndroidSigning*` MSBuild properties. Test the signed AAB on an internal track before production.
 
-After that, `npm run android:sync` rebuilds the web assets and copies them in,
-and `npm run android:open` opens the project in Android Studio.
-
-### Publishing to the Microsoft Store
-
-The Store only accepts a package whose identity matches the listing you
-reserved, so three values need replacing before submitting. Reserve the app
-name in [Partner Center](https://partner.microsoft.com/dashboard) first, then
-open **Product management → Product identity** and copy:
-
-| Partner Center field | Where it goes |
-| --- | --- |
-| `Package/Identity/Name` | `appx.identityName` |
-| `Package/Identity/Publisher` | `appx.publisher` |
-| `Package/Properties/PublisherDisplayName` | `appx.publisherDisplayName` |
-
-Either edit `electron-builder.yml` directly, or set them as repository
-variables named `APPX_IDENTITY_NAME`, `APPX_PUBLISHER` and
-`APPX_PUBLISHER_DISPLAY_NAME` — the CI workflow builds the Store package only
-once those are present, since a package built with the placeholder identity
-cannot be uploaded anyway.
-
-You do not need a code-signing certificate: the Store signs the package on
-submission.
-
-### Installing from the web instead
-
-The web build is a progressive web app. Open it in Edge or Chrome on Windows and
-use **Install this app** — it gets its own window, a Start-menu entry, and works
-offline. No installer, no Store listing.
-
-## How correctness is established
-
-The cube engine is the part where a subtle mistake produces plausible-looking
-nonsense, so it is checked rather than trusted:
-
-- **Two independent models of the cube.** A sticker model derived from a 3D
-  geometric model, and a permutation model used by the solver. The tests assert
-  they agree on 500 random scrambles, and pin the derived facelet tables against
-  the standard ones.
-- **Scrambles verify themselves.** A random state is drawn, the scramble is
-  built from it, and the test asserts that applying that scramble to a solved
-  cube lands on exactly that state.
-- **The 2x2 solver finds a worst case of exactly 11 moves** across 1500 states,
-  matching God's number for 2x2 in the half-turn metric — which confirms the
-  distance table spans the whole state space.
-- **Algorithm coverage is proven, not assumed.** The case spaces are enumerated
-  from the cube's own constraints, which independently derives the familiar
-  counts of 57 OLL, 21 PLL and 41 F2L cases. Each set is then asserted to cover
-  its space exactly once, so a missing, duplicated or mistyped algorithm fails
-  the build.
-- **The F2L algorithms are generated rather than transcribed.**
-  `scripts/generate-f2l.mjs` searches outwards from a solved cube using only the
-  faces bounding the slot and records the shortest route to each case.
-
-There are 141 tests. `scripts/smoke-electron.cjs` additionally launches the real
-Electron shell and checks the app loads, has a secure origin, can open its
-database and generates a scramble.
-
-## Layout
-
-Three packages and three shells. The split is not decoration: it is what lets
-one team claim three platforms without maintaining three apps.
-
-```
-packages/core/        everything that does not care where it runs
-  cube/               cube models, notation, solvers, scramble generation
-  algs/               F2L/OLL/PLL data, case identification, drill logic
-  stats/              solve records and the average rules
-  data/               the save-file format
-  diagram/            projection and arrow geometry for the case pictures
-  tutorials/          the solve-along analysis
-
-packages/platform/    the six things a machine has to provide
-  storage/            IndexedDB, and an in-memory fallback
-  files/              export and import
-
-packages/ui/          every screen, shared by all three shells
-  components/         cube diagrams, charts, shared pieces
-  routes/             the screens
-  state/              app state, the timer, the scramble queue
-  tutorials/          lesson content
-
-apps/web/             Vite + service worker
-apps/windows/         Electron main and preload processes
-apps/android/         Capacitor, plus the one adapter Android needs
-```
-
-`packages/core` is compiled a second time without the DOM library
-(`npm run typecheck`), so a stray `document` or `localStorage` in it is a
-compile error rather than a crash on one platform months later. That is also
-why almost all of the test suite runs in Node: the cube model, the solver, case
-recognition, the statistics and the diagram geometry are tested once, not three
-times on three devices.
-
-### Adding another algorithm set
-
-A set is self-describing: it knows how to identify one of its cases from a cube
-state, how to enumerate every case that can exist, and what must be true of a
-case state. Write a data file exporting an `AlgSet` and add it to the list in
-`packages/core/src/algs/index.ts` — the shared test then verifies it
-automatically, including full coverage of whatever case space it defines.
+For Microsoft Store, reserve the application identity in Partner Center, associate the project with that identity, replace the development publisher in `Package.appxmanifest`, and use a trusted certificate. Publish with Visual Studio's **Package and Publish** flow or `dotnet publish -f net9.0-windows10.0.19041.0 -c Release`. Validate the generated MSIX with the Windows App Certification Kit before submission.

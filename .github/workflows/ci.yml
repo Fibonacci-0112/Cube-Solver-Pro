@@ -1,107 +1,23 @@
-name: CI
-
-on:
-  # Branch pushes are covered by the pull_request event; listing them here too
-  # would run the whole workflow twice for every push to a PR branch.
-  push:
-    branches: [main]
-  pull_request:
-  workflow_dispatch:
-
-# A new push supersedes whatever was already running for the same ref.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
+name: .NET CI
+on: [push, pull_request]
 jobs:
-  check:
-    name: Tests, types and web build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-      # Also compiles packages/core a second time without the DOM library, so a
-      # platform-specific global creeping into the shared code fails here rather
-      # than on one of the three devices.
-      - name: Type check
-        run: npm run typecheck
-      - name: Unit tests
-        run: npm test
-      - name: Build the web app
-        run: npm run build
-
-      # Every shell is built on every change. They share all their source, so a
-      # break in one is a break in all three — but only if something builds them.
-      - name: Build the Windows renderer
-        run: npm run build --workspace @cube/windows
-      - name: Build the Android web assets
-        run: npm run build --workspace @cube/android
-
-      - name: Build the desktop shell
-        run: npm run build:electron --workspace @cube/windows
-
-      # Launches the real Electron shell and checks the things the custom
-      # app:// scheme exists to make work — a secure origin, a usable local
-      # database, and a scramble actually being generated.
-      - name: Smoke-test the desktop shell
-        run: xvfb-run -a npx electron --no-sandbox scripts/smoke-electron.cjs
-        working-directory: apps/windows
-        timeout-minutes: 5
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: apps/web/dist
-          retention-days: 14
-
-  windows:
-    name: Windows packages
-    needs: check
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-      - run: npm run build --workspace @cube/windows
-      - run: npm run build:electron --workspace @cube/windows
-
-      - name: Build the installer
-        run: npx electron-builder --win nsis --publish never
-        working-directory: apps/windows
-
-      # Only worth building once the Partner Center identity is configured:
-      # a package whose identity does not match the listing cannot be uploaded.
-      # Set these as repository variables (Settings → Secrets and variables →
-      # Actions → Variables) to switch this step on.
-      # Written to a config file rather than passed as -c.appx.x=y flags:
-      # PowerShell's quoting when it invokes the npx.cmd shim mangles a flag
-      # value containing a space, which PUBLISHER_DISPLAY_NAME normally has.
-      - name: Build the Microsoft Store package
-        if: ${{ vars.APPX_IDENTITY_NAME != '' }}
-        env:
-          APPX_IDENTITY_NAME: ${{ vars.APPX_IDENTITY_NAME }}
-          APPX_PUBLISHER: ${{ vars.APPX_PUBLISHER }}
-          APPX_PUBLISHER_DISPLAY_NAME: ${{ vars.APPX_PUBLISHER_DISPLAY_NAME }}
-        run: |
-          node scripts/write-appx-config.mjs
-          npx electron-builder --win appx --publish never -c appx.config.json
-        working-directory: apps/windows
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-packages
-          path: |
-            apps/windows/dist-release/*.exe
-            apps/windows/dist-release/*.appx
-            apps/windows/dist-release/*.msix
-          if-no-files-found: error
-          retention-days: 14
+ test:
+  runs-on: ubuntu-latest
+  steps:
+   - uses: actions/checkout@v4
+   - uses: actions/setup-dotnet@v4
+     with: { dotnet-version: 9.0.x }
+   - run: dotnet restore tests/CubeSolverPro.Core.Tests/CubeSolverPro.Core.Tests.csproj
+   - run: dotnet build tests/CubeSolverPro.Core.Tests/CubeSolverPro.Core.Tests.csproj --no-restore --configuration Release
+   - run: dotnet test tests/CubeSolverPro.Core.Tests/CubeSolverPro.Core.Tests.csproj --no-build --configuration Release
+ maui:
+  strategy:
+   matrix: { include: [{os: windows-latest, tfm: net9.0-windows10.0.19041.0}, {os: windows-latest, tfm: net9.0-android}] }
+  runs-on: ${{ matrix.os }}
+  steps:
+   - uses: actions/checkout@v4
+   - uses: actions/setup-dotnet@v4
+     with: { dotnet-version: 9.0.x }
+   - run: dotnet workload install maui
+   - run: dotnet restore src/CubeSolverPro.App/CubeSolverPro.App.csproj
+   - run: dotnet build src/CubeSolverPro.App/CubeSolverPro.App.csproj -f ${{ matrix.tfm }} --no-restore --configuration Release

@@ -1,0 +1,9 @@
+@page "/" @implements IAsyncDisposable @inject IJSRuntime JS
+<section class="timer @(running?"running":"") @(armed?"armed":"")" @onpointerdown="Down" @onpointerup="Up"><p class="scramble">@scramble</p><CubeDiagram State="cube"/><output>@Display</output><p>@status</p></section>
+@code{long started;bool running,armed,stopping;string status="Hold space or touch to start";string scramble="";PuzzleCube cube=PuzzleCube.Solved(3);CancellationTokenSource? hold;DotNetObjectReference<Timer>? self;
+ protected override async Task OnInitializedAsync(){Next();self=DotNetObjectReference.Create(this);await JS.InvokeVoidAsync("cubeTimer.attach",self);}
+ void Next(){var x=Scrambles.Generate("333");scramble=x.Text;cube=x.State;}
+ async Task Down(){if(running){await Stop();return;}hold=new();try{await Task.Delay(300,hold.Token);armed=true;status="Release to start";StateHasChanged();}catch(OperationCanceledException){}}
+ Task Up(){hold?.Cancel();if(armed&&!running){armed=false;running=true;started=Environment.TickCount64;status="Solving";}return Task.CompletedTask;}
+ async Task Stop(){if(!running||stopping)return;stopping=true;var elapsed=Environment.TickCount64-started;running=false;status=$"{SolveStatistics.FormatTime(elapsed)} — +2 / DNF available in solve history";Next();stopping=false;await InvokeAsync(StateHasChanged);}
+ string Display=>running?"…":status.Split(' ')[0];[JSInvokable]public Task KeyDown()=>Down();[JSInvokable]public Task KeyUp()=>running?Stop():Up();public async ValueTask DisposeAsync(){hold?.Cancel();if(self!=null)await JS.InvokeVoidAsync("cubeTimer.detach");self?.Dispose();}}
